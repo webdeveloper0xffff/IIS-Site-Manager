@@ -9,8 +9,14 @@
 
 ```
 IIS-Site-Manager/
-├── backend/          # .NET 10 Web API
-├── frontend/         # Next.js 前端
+├── backend/          # .NET 10 Web API 源码
+├── frontend/         # Next.js 前端源码
+├── deploy/           # IIS 部署包
+│   ├── api/          # 后端发布输出
+│   ├── web/          # 前端静态文件
+│   ├── build.ps1     # 构建脚本
+│   ├── setup-iis.ps1 # IIS 配置脚本
+│   └── DEPLOY.md     # 部署说明
 └── README.md
 ```
 
@@ -29,13 +35,21 @@ IIS-Site-Manager/
 2. **前端**：`cd frontend && npm run dev`（默认 http://localhost:3000）
 3. 创建 IIS 站点需以**管理员**身份运行后端
 
-### IIS 部署
+### IIS 部署（使用预构建包）
 
-1. 构建：`cd deploy && .\build.ps1`
+仓库已包含 `deploy/` 目录的预构建部署包，可直接部署到 IIS：
+
+1. **以管理员身份**运行 PowerShell
+2. 执行：`cd deploy; .\setup-iis.ps1`
+3. 访问：http://localhost:8081（前端）| http://localhost:8081/api（API）
+
+### IIS 部署（从源码构建）
+
+1. 构建：`cd deploy; .\build.ps1`
 2. 部署：以管理员运行 `.\setup-iis.ps1`
 3. 访问：http://localhost:8081（前端）| http://localhost:8081/api（API）
 
-详见 `deploy/DEPLOY.md`。
+详见 [`deploy/DEPLOY.md`](deploy/DEPLOY.md)。
 
 ## API 接口
 
