@@ -7,10 +7,21 @@ frontend/.next/
 frontend/out/
 backend/bin/
 backend/obj/
+agent/bin/
+agent/obj/
 
 # Deploy - allow scripts but ignore logs and debug symbols
 deploy/api/logs/
+deploy/api/.appdata/
+deploy/api/.dotnet/
+deploy/api/.templateengine/
 *.pdb
+
+# Local .NET / NuGet caches
+.appdata/
+.dotnet/
+.nuget/
+.templateengine/
 
 # Environment & secrets
 .env
@@ -30,3 +41,9 @@ Thumbs.db
 # Logs
 *.log
 logs/
+
+# Local planning/ops state
+memory-bank/
+
+# Temporary local test scaffolding
+tests/

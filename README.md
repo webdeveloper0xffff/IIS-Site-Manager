@@ -1,70 +1,100 @@
 # IIS Site Manager
 
-简单的 IIS 站点管理工具，支持创建站点、监控 CPU、内存和带宽。
+Admin-first shared hosting MVP for IIS.
 
-- **前端**: Next.js + TypeScript + Tailwind + Recharts
-- **后端**: .NET 10 Web API
+## Components
 
-## 目录结构
+- `backend/`: .NET 10 control-plane API
+- `frontend/`: Next.js admin panel
+- `agent/`: remote Windows agent for IIS provisioning
+- `deploy/`: build and IIS deployment scripts
 
+## Current Flow
+
+1. Customer registers.
+2. Admin approves the customer.
+3. Customer is assigned to a node.
+4. Admin queues site provisioning.
+5. Agent polls the job and creates the IIS site.
+6. Control-plane tracks jobs, sites, and node health.
+
+## Required Backend Configuration
+
+Set secure backend values through environment variables or deployment-time config. The backend now fails fast if required values are missing or still set to placeholders.
+
+```json
+{
+  "Admin": {
+    "Username": "<set-admin-username>",
+    "PasswordHash": "<set-admin-password-hash>",
+    "JwtKey": "<set-admin-jwt-key>",
+    "JwtIssuer": "IIS-Site-Manager",
+    "JwtAudience": "IIS-Site-Manager-Admin",
+    "JwtExpiresMinutes": 720
+  },
+  "ConnectionStrings": {
+    "Default": "<set-sqlserver-connection-string>"
+  }
+}
 ```
-IIS-Site-Manager/
-├── backend/          # .NET 10 Web API 源码
-├── frontend/         # Next.js 前端源码
-├── deploy/           # IIS 部署包
-│   ├── api/          # 后端 + 前端（单应用，wwwroot 为静态文件）
-│   ├── build.ps1     # 构建脚本
-│   ├── setup-iis.ps1 # IIS 配置脚本
-│   └── DEPLOY.md     # 部署说明
-└── README.md
+
+Environment variable names:
+
+- `Admin__Username`
+- `Admin__PasswordHash`
+- `Admin__JwtKey`
+- `Admin__JwtIssuer`
+- `Admin__JwtAudience`
+- `Admin__JwtExpiresMinutes`
+- `ConnectionStrings__Default`
+
+## Generate Admin Password Hash
+
+```powershell
+dotnet run --project backend -- --hash-password "YourStrongAdminPassword!"
 ```
 
-## 功能
+Copy the output into `Admin__PasswordHash`.
 
-- 创建 IIS 站点（站点名、域名、物理路径、应用池、端口）
-- 实时 CPU、RAM 和带宽监控（每 3 秒刷新）
-- CPU/RAM/带宽历史曲线图
-- 站点列表展示
-- 支持远程访问（绑定 `*:8081`，自动放行防火墙）
+## Local Development
 
-## 运行
+Backend:
 
-### 开发模式
+```powershell
+dotnet restore backend/IIS-Site-Manager.API.csproj --configfile NuGet.Config
+dotnet run --project backend
+```
 
-1. **后端**：`cd backend && dotnet run`（默认 http://localhost:5032）
-2. **前端**：`cd frontend && npm run dev`（默认 http://localhost:3000）
-3. 创建 IIS 站点需以**管理员**身份运行后端
+Frontend:
 
-### IIS 部署（使用预构建包）
+```powershell
+cd frontend
+npm install
+npm run dev
+```
 
-仓库已包含 `deploy/` 目录的预构建部署包，可直接部署到 IIS：
+Default backend URL is `http://localhost:5032`.
 
-1. **以管理员身份**运行 PowerShell
-2. 执行：`cd deploy; .\setup-iis.ps1`
-3. 访问：http://服务器IP或主机名:8081（支持远程访问）
+## Security Notes
 
-### IIS 部署（从源码构建）
+- Admin login uses hashed password verification.
+- `Admin:JwtKey` is required.
+- `X-Admin-Key` bypass auth is removed.
+- Customer passwords are stored as hashes.
+- Legacy customer plaintext passwords migrate to a hash on successful login.
 
-1. 构建：`cd deploy; .\build.ps1`
-2. 部署：以管理员运行 `.\setup-iis.ps1`
-3. 访问：http://服务器IP或主机名:8081（支持远程访问）
+## Verification
 
-详见 [`deploy/DEPLOY.md`](deploy/DEPLOY.md)。
+```powershell
+$env:SECURITY_TEST_SQL_CONNECTION="Server=localhost\\SQLEXPRESS;User Id=<user>;Password=<password>;TrustServerCertificate=True;MultipleActiveResultSets=True;Encrypt=False"
+dotnet run --project backend -- --run-security-smoke-tests
+```
 
-## API 接口
+If your local SQL Server supports integrated authentication, the environment variable is optional.
 
-| 方法 | 路径 | 说明 |
-|-----|------|------|
-| GET | `/api/metrics` | 获取 CPU、内存、带宽指标 |
-| GET | `/api/sites` | 获取站点列表 |
-| POST | `/api/sites` | 创建站点（JSON body） |
+## Deployment Notes
 
-## 技术栈
-
-- **前端**: Next.js 16, React 19, Tailwind CSS 4, Recharts
-- **后端**: ASP.NET Core 10, Microsoft.Web.Administration, System.Diagnostics.PerformanceCounter, System.Management (WMI)
-
-## 注意事项
-
-- 应用池使用 **NetworkService** 身份以读取 CPU/带宽性能计数器
-- 通过 Web 界面创建站点需管理员权限；若需创建站点，建议以管理员身份运行 `dotnet run` 单独启动后端
+- Control-plane runtime currently serves on `:5032`.
+- Frontend runtime currently serves on `:8082`.
+- Remote agent currently runs via scheduled task, not Windows Service.
+- Remote Windows Service startup is still a known issue.

@@ -1,10 +1,10 @@
-function getApiBase(): string {
+﻿function getApiBase(): string {
   const envUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
   if (envUrl) return envUrl;
-  // Dev (port 3000): backend on 5032; IIS/production: use relative path (same origin)
+  // Dev (port 3000): backend on 5032; separate IIS frontend/backend: use same host + backend port.
   if (typeof window !== 'undefined') {
     if (window.location.port === '3000') return 'http://localhost:5032';
-    return ''; // relative URL -> /api/* always works for same-origin
+    return `${window.location.protocol}//${window.location.hostname}:5032`;
   }
   return 'http://localhost:5032';
 }

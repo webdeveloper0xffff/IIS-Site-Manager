@@ -1,58 +1,34 @@
-# 发布到 GitHub 指南
+# Publish To GitHub
 
-## 1. 安装 Git
+## Before Pushing
 
-从 https://git-scm.com/download/win 下载并安装 Git for Windows。
-
-安装完成后，**重启终端**使 `git` 命令生效。
-
-## 2. 配置 Git（首次使用）
+1. Confirm `backend/appsettings*.json` still contains placeholders, not real secrets.
+2. Set runtime secrets through environment variables or deployment-only config.
+3. Run:
 
 ```powershell
-git config --global user.name "你的用户名"
-git config --global user.email "你的邮箱@example.com"
+dotnet restore backend/IIS-Site-Manager.API.csproj --configfile NuGet.Config
+dotnet build backend/IIS-Site-Manager.API.csproj --no-restore
+dotnet run --project backend -- --run-security-smoke-tests
 ```
 
-## 3. 在 GitHub 创建仓库
+4. Review `git status` and confirm local caches plus `memory-bank/` are excluded.
 
-1. 登录 https://github.com
-2. 点击右上角 **+** → **New repository**
-3. 仓库名填写：`IIS-Site-Manager`（或自定义）
-4. 选择 **Public**
-5. **不要**勾选 "Add a README file"（本地已有）
-6. 点击 **Create repository**
-
-## 4. 推送代码
-
-**本地已初始化并完成首次提交**，只需添加远程仓库并推送：
+## Push Commands
 
 ```powershell
-cd c:\Users\Administrator\Desktop\hosting_web\IIS-Site-Manager
-
-# 添加远程（将 YOUR_USERNAME 替换为你的 GitHub 用户名）
-git remote add origin https://github.com/YOUR_USERNAME/IIS-Site-Manager.git
-
-# 推送到 main
+cd C:\Users\Administrator\Desktop\hosting_web\IIS-Site-Manager
 git branch -M main
 git push -u origin main
 ```
 
-或使用脚本（替换为你的仓库地址后运行）：
+Or:
+
 ```powershell
 .\push-to-github.ps1 -RepoUrl "https://github.com/YOUR_USERNAME/IIS-Site-Manager.git"
 ```
 
-## 5. 若使用 SSH
+## Authentication
 
-若已配置 SSH 密钥：
-
-```powershell
-git remote add origin git@github.com:YOUR_USERNAME/IIS-Site-Manager.git
-git push -u origin main
-```
-
-## 6. 若需要登录
-
-推送时若提示输入凭据：
-- **用户名**：GitHub 用户名
-- **密码**：使用 **Personal Access Token**（Settings → Developer settings → Personal access tokens）而非登录密码
+- HTTPS: use a GitHub Personal Access Token when prompted.
+- SSH: switch `origin` to an SSH URL first if you already have keys configured.
